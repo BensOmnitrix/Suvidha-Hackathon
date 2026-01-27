@@ -1,0 +1,373 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum BillStatus {
+  unpaid
+  paid
+  partial
+  overdue
+}
+
+enum PaymentStatus {
+  pending
+  success
+  failed
+  refunded
+}
+
+enum SessionStatus {
+  active
+  inactive
+}
+
+enum ComplaintStatus {
+  open
+  in_progress
+  resolved
+  closed
+  escalated
+}
+
+enum Priority {
+  low
+  normal
+  high
+  urgent
+}
+
+//////////////////////////////
+// USERS & AUTH
+//////////////////////////////
+
+model User {
+  userId            String   @id @default(uuid())
+  citizenId         String   @unique
+  mobileNumber      String   @unique
+  email             String?  @unique
+  fullName          String
+  dateOfBirth       DateTime?
+  address           Json?
+  profilePhotoUrl   String?
+  preferredLanguage String   @default("en")
+  isActive           Boolean @default(true)
+  emailVerified     Boolean @default(false)
+  mobileVerified    Boolean @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  lastLoginAt       DateTime?
+
+  sessions          UserSession[]
+  utilityConnections UtilityConnection[]
+  payments          Payment[]
+  serviceRequests   ServiceRequest[]
+  complaints        Complaint[]
+  notifications     Notification[]
+  documents         Document[]
+
+  @@index([citizenId])
+  @@index([mobileNumber])
+  @@index([email])
+}
+
+model UserSession {
+  sessionId    String   @id @default(uuid())
+  userId       String
+  kioskId      String?
+  sessionToken String
+  ipAddress    String?
+  userAgent    String?
+  startedAt    DateTime @default(now())
+  expiresAt    DateTime
+  endedAt      DateTime?
+  sessionData  Json?
+  isActive     Boolean  @default(true)
+
+  user User @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([kioskId])
+  @@index([sessionToken])
+  @@index([expiresAt])
+}
+
+model OtpVerification {
+  otpId        String   @id @default(uuid())
+  mobileNumber String
+  otpCode      String
+  purpose      String
+  isVerified   Boolean  @default(false)
+  attempts     Int      @default(0)
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime
+  verifiedAt   DateTime?
+}
+
+//////////////////////////////
+// SERVICE PROVIDERS
+//////////////////////////////
+
+model ServiceProvider {
+  providerId   String  @id @default(uuid())
+  providerCode String  @unique
+  providerName String
+  serviceType  String
+  region       String?
+  contactInfo  Json?
+  apiEndpoint  String?
+  apiCredentialsEncrypted String?
+  isActive     Boolean @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  connections UtilityConnection[]
+}
+
+model UtilityConnection {
+  connectionId   String @id @default(uuid())
+  userId         String
+  providerId     String
+  connectionNumber String @unique
+  connectionType String
+  serviceAddress Json
+  meterNumber    String?
+  connectionStatus String @default("active")
+  connectionDate DateTime?
+  lastReadingDate DateTime?
+  lastReadingValue Decimal?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  provider ServiceProvider @relation(fields: [providerId], references: [providerId])
+
+  bills Bills[]
+}
+
+//////////////////////////////
+// BILLING & PAYMENTS
+//////////////////////////////
+
+model Bills {
+  billId      String   @id @default(uuid())
+  connectionId String
+  billNumber  String   @unique
+  billingPeriodStart DateTime
+  billingPeriodEnd   DateTime
+  previousReading Decimal?
+  currentReading  Decimal?
+  unitsConsumed   Decimal?
+  amountBeforeTax Decimal
+  taxAmount       Decimal @default(0)
+  totalAmount     Decimal
+  dueDate         DateTime
+  lateFee         Decimal @default(0)
+  billStatus      BillStatus @default(unpaid)
+  billDocumentUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  connection UtilityConnection @relation(fields: [connectionId], references: [connectionId])
+  payments   Payment[]
+
+  @@index([connectionId])
+  @@index([billStatus])
+  @@index([dueDate])
+}
+
+model Payment {
+  paymentId    String @id @default(uuid())
+  billId       String
+  userId       String
+  transactionId String @unique
+  paymentMethod String
+  paymentGateway String?
+  amount        Decimal
+  paymentStatus PaymentStatus @default(pending)
+  gatewayResponse Json?
+  paymentDate DateTime?
+  receiptNumber String?
+  receiptUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  bill Bills @relation(fields: [billId], references: [billId])
+  user User @relation(fields: [userId], references: [userId])
+
+  @@index([billId])
+  @@index([userId])
+  @@index([paymentStatus])
+}
+
+//////////////////////////////
+// REQUESTS & COMPLAINTS
+//////////////////////////////
+
+model ServiceRequest {
+  requestId String @id @default(uuid())
+  userId String
+  connectionId String?
+  requestType String
+  requestNumber String @unique
+  description String?
+  priority Priority @default(normal)
+  status String @default("submitted")
+  submittedAt DateTime @default(now())
+  assignedTo String?
+  assignedAt DateTime?
+  completedAt DateTime?
+  rejectionReason String?
+  supportingDocuments Json?
+  adminNotes String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [userId])
+}
+
+model Complaint {
+  complaintId String @id @default(uuid())
+  userId String
+  connectionId String?
+  complaintNumber String @unique
+  complaintCategory String
+  complaintType String?
+  subject String
+  description String
+  priority Priority @default(normal)
+  status ComplaintStatus @default(open)
+  locationDetails Json?
+  supportingDocuments Json?
+  submittedAt DateTime @default(now())
+  assignedTo String?
+  assignedAt DateTime?
+  resolvedAt DateTime?
+  resolutionNotes String?
+  satisfactionRating Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [userId])
+  updates ComplaintUpdate[]
+}
+
+model ComplaintUpdate {
+  updateId String @id @default(uuid())
+  complaintId String
+  updateBy String
+  updateMessage String
+  oldStatus String?
+  newStatus String?
+  createdAt DateTime @default(now())
+
+  complaint Complaint @relation(fields: [complaintId], references: [complaintId], onDelete: Cascade)
+}
+
+//////////////////////////////
+// KIOSKS
+//////////////////////////////
+
+model Kiosk {
+  kioskId String @id @default(uuid())
+  kioskCode String @unique
+  locationName String
+  locationType String?
+  address Json
+  geolocation Unsupported("point")
+  installationDate DateTime?
+  lastMaintenanceDate DateTime?
+  hardwareSpecs Json?
+  softwareVersion String?
+  status String @default("active")
+  isOperational Boolean @default(true)
+  supportedServices Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+//////////////////////////////
+// NOTIFICATIONS & DOCS
+//////////////////////////////
+
+model Notification {
+  notificationId String @id @default(uuid())
+  userId String
+  notificationType String
+  title String
+  message String
+  priority Priority @default(normal)
+  isRead Boolean @default(false)
+  readAt DateTime?
+  relatedEntityType String?
+  relatedEntityId String?
+  deliveryChannels Json?
+  sentAt DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [userId])
+}
+
+model Document {
+  documentId String @id @default(uuid())
+  userId String
+  documentType String
+  documentName String
+  fileUrl String
+  fileSizeKb Int?
+  mimeType String?
+  relatedEntityType String?
+  relatedEntityId String?
+  uploadedAt DateTime @default(now())
+  expiresAt DateTime?
+  isVerified Boolean @default(false)
+  verifiedBy String?
+  verifiedAt DateTime?
+
+  user User @relation(fields: [userId], references: [userId])
+}
+
+//////////////////////////////
+// ADMIN & AUDIT
+//////////////////////////////
+
+model AdminUser {
+  adminId String @id @default(uuid())
+  username String @unique
+  email String @unique
+  passwordHash String
+  fullName String
+  role String
+  permissions Json?
+  department String?
+  isActive Boolean @default(true)
+  lastLoginAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  auditId String @id @default(uuid())
+  entityType String
+  entityId String
+  action String
+  performedBy String?
+  oldValues Json?
+  newValues Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
