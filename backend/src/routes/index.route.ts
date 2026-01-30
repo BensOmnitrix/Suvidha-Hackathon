@@ -2,6 +2,7 @@ import { Router } from "express";
 import { authRouter } from "./auth.route.js";
 import { userRouter } from "./user.route.js";
 import { kioskRouter } from "./kiosk.route.js";
+import paymentRouter from "./payment.route.js";
 
 export const indexRouter = Router();
 
@@ -12,3 +13,4 @@ indexRouter.get("/health", (_req, res) => {
 indexRouter.use("/auth", authRouter);
 indexRouter.use("/users", userRouter);
 indexRouter.use("/kiosks", kioskRouter);
+indexRouter.use("/payments", paymentRouter);
