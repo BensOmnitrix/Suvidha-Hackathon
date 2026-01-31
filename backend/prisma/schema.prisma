@@ -65,12 +65,21 @@ enum Priority {
   urgent
 }
 
+// User Roles for RBAC
+enum UserRole {
+  citizen         // Normal users - file complaints, pay bills
+  kiosk_operator  // Kiosk staff - help citizens
+  admin           // Manage complaints, approve connections
+  super_admin     // Full system access
+}
+
 //////////////////////////////
 // USERS & AUTH
 //////////////////////////////
 
 model User {
   userId            String   @id @default(uuid())
+  role              UserRole @default(citizen)  // RBAC role
   citizenId         String   @unique
   mobileNumber      String   @unique
   email             String?  @unique
