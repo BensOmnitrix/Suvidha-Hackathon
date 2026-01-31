@@ -1,15 +1,27 @@
-import {type Request,type Response,type NextFunction } from "express";
+import { type Request, type Response, type NextFunction } from "express";
+import { ApiError } from "../utils/ApiError.js";
 
-export function errorHandler(
+const errorHandler = (
   err: any,
-  _req: Request,
+  req: Request,
   res: Response,
-  _next: NextFunction
-) {
-  console.error(err);
+  next: NextFunction
+) => {
+  let error = err;
 
-  res.status(500).json({
-    success: false,
-    message: "Internal server error",
-  });
-}
+  if (!(error instanceof ApiError)) {
+    const statusCode = error.statusCode || 500;
+    const message = error.message || "Internal Server Error";
+    error = new ApiError(statusCode, message, error?.errors || [], err.stack);
+  }
+
+  const response = {
+    ...error,
+    message: error.message,
+    ...(process.env.NODE_ENV === "development" ? { stack: error.stack } : {}),
+  };
+
+  return res.status(error.statusCode).json(response);
+};
+
+export { errorHandler };

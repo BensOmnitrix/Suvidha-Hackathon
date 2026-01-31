@@ -13,7 +13,7 @@ export async function createAuditLog(
       entityType,
       entityId,
       action,
-      performedBy,
+      performedBy: performedBy || null,
     },
   });
 }
