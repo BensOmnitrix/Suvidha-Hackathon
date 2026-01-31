@@ -1,3 +1,39 @@
+# Dependencies
 node_modules
+.pnp
+.pnp.js
+
+# Environment variables
 .env
+.env.test
+.env.production
+.env.local
+
+# Build outputs
+/dist
+/build
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs
+*.log
+
+# Prisma
 /src/generated/prisma
+*.sqlite
+*.sqlite-journal
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor directories
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea
+
+# Testing
+coverage
