@@ -1,7 +1,7 @@
 import {} from "express";
-import { asyncHandler } from "../utils/asyncHandler.js";
-import { ApiResponse } from "../utils/ApiResponse.js";
-import { prisma } from "../lib/prisma.js";
+import { asyncHandler } from "../../utils/asyncHandler.js";
+import { ApiResponse } from "../../utils/ApiResponse.js";
+import { prisma } from "../../lib/prisma.js";
 // Get User Bills (optionally filter by status)
 const getUserBills = asyncHandler(async (req, res) => {
     const user = req.user;

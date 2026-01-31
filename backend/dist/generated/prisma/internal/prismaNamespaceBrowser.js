@@ -45,6 +45,8 @@ export const ModelName = {
     ServiceProvider: 'ServiceProvider',
     UtilityConnection: 'UtilityConnection',
     Bills: 'Bills',
+    WebhookEvent: 'WebhookEvent',
+    PaymentOrder: 'PaymentOrder',
     Payment: 'Payment',
     ServiceRequest: 'ServiceRequest',
     Complaint: 'Complaint',
@@ -152,8 +154,44 @@ export const BillsScalarFieldEnum = {
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
 };
+export const WebhookEventScalarFieldEnum = {
+    eventId: 'eventId',
+    eventType: 'eventType',
+    razorpayEventId: 'razorpayEventId',
+    payload: 'payload',
+    rawBody: 'rawBody',
+    verified: 'verified',
+    processed: 'processed',
+    processedAt: 'processedAt',
+    errorMessage: 'errorMessage',
+    ipAddress: 'ipAddress',
+    headers: 'headers',
+    receivedAt: 'receivedAt'
+};
+export const PaymentOrderScalarFieldEnum = {
+    orderId: 'orderId',
+    paymentFor: 'paymentFor',
+    billId: 'billId',
+    serviceRequestId: 'serviceRequestId',
+    userId: 'userId',
+    customerName: 'customerName',
+    customerEmail: 'customerEmail',
+    customerMobile: 'customerMobile',
+    razorpayOrderId: 'razorpayOrderId',
+    razorpayPaymentId: 'razorpayPaymentId',
+    razorpaySignature: 'razorpaySignature',
+    amount: 'amount',
+    currency: 'currency',
+    status: 'status',
+    createdAt: 'createdAt',
+    attemptedAt: 'attemptedAt',
+    paidAt: 'paidAt',
+    expiresAt: 'expiresAt',
+    metadata: 'metadata'
+};
 export const PaymentScalarFieldEnum = {
     paymentId: 'paymentId',
+    paymentOrderId: 'paymentOrderId',
     billId: 'billId',
     userId: 'userId',
     transactionId: 'transactionId',

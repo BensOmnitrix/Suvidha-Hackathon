@@ -1,8 +1,8 @@
 import { type Request, type Response } from "express";
-import { asyncHandler } from "../utils/asyncHandler.js";
-import { ApiError } from "../utils/ApiError.js";
-import { ApiResponse } from "../utils/ApiResponse.js";
-import { prisma } from "../lib/prisma.js";
+import { asyncHandler } from "../../utils/asyncHandler.js";
+import { ApiError } from "../../utils/ApiError.js";
+import { ApiResponse } from "../../utils/ApiResponse.js";
+import { prisma } from "../../lib/prisma.js";
 
 // Register a new Kiosk
 const registerKiosk = asyncHandler(async (req: Request, res: Response) => {

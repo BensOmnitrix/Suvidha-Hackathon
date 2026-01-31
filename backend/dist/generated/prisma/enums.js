@@ -19,6 +19,22 @@ export const PaymentStatus = {
     failed: 'failed',
     refunded: 'refunded'
 };
+export const PaymentOrderStatus = {
+    created: 'created',
+    attempted: 'attempted',
+    paid: 'paid',
+    failed: 'failed',
+    expired: 'expired',
+    refund_initiated: 'refund_initiated',
+    refunded: 'refunded'
+};
+export const PaymentFor = {
+    bill_payment: 'bill_payment',
+    new_connection: 'new_connection',
+    security_deposit: 'security_deposit',
+    reconnection_fee: 'reconnection_fee',
+    miscellaneous: 'miscellaneous'
+};
 export const SessionStatus = {
     active: 'active',
     inactive: 'inactive'

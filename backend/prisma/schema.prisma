@@ -27,6 +27,24 @@ enum PaymentStatus {
   refunded
 }
 
+enum PaymentOrderStatus {
+  created
+  attempted
+  paid
+  failed
+  expired
+  refund_initiated
+  refunded
+}
+
+enum PaymentFor {
+  bill_payment
+  new_connection
+  security_deposit
+  reconnection_fee
+  miscellaneous
+}
+
 enum SessionStatus {
   active
   inactive
@@ -71,6 +89,7 @@ model User {
   sessions          UserSession[]
   utilityConnections UtilityConnection[]
   payments          Payment[]
+  paymentOrders     PaymentOrder[]
   serviceRequests   ServiceRequest[]
   complaints        Complaint[]
   notifications     Notification[]
@@ -179,32 +198,106 @@ model Bills {
   updatedAt DateTime @updatedAt
 
   connection UtilityConnection @relation(fields: [connectionId], references: [connectionId])
-  payments   Payment[]
+  payments      Payment[]
+  paymentOrders PaymentOrder[]
 
   @@index([connectionId])
   @@index([billStatus])
   @@index([dueDate])
 }
 
+model WebhookEvent {
+  eventId       String   @id @default(uuid())
+  eventType     String                        // e.g., "payment.captured", "payment.failed"
+  razorpayEventId String? @unique             // Razorpay's event ID for idempotency
+  payload       Json                          // Parsed event payload
+  rawBody       String?                       // Raw request body for signature verification
+  verified      Boolean  @default(false)      // Signature verification status
+  processed     Boolean  @default(false)      // Whether we've acted on this event
+  processedAt   DateTime?
+  errorMessage  String?                       // If processing failed
+  ipAddress     String?
+  headers       Json?
+  receivedAt    DateTime @default(now())
+
+  @@index([eventType])
+  @@index([razorpayEventId])
+  @@index([verified])
+  @@index([processed])
+  @@index([receivedAt])
+}
+
+model PaymentOrder {
+  orderId             String             @id @default(uuid())
+  
+  // What is being paid for
+  paymentFor          PaymentFor
+  billId              String?
+  serviceRequestId    String?
+  
+  // User info (can be guest for kiosk)
+  userId              String?
+  customerName        String?
+  customerEmail       String?
+  customerMobile      String?
+  
+  // Razorpay
+  razorpayOrderId     String             @unique
+  razorpayPaymentId   String?
+  razorpaySignature   String?
+  
+  // Amount
+  amount              Decimal
+  currency            String             @default("INR")
+  
+  // Status
+  status              PaymentOrderStatus @default(created)
+  
+  // Timestamps
+  createdAt           DateTime           @default(now())
+  attemptedAt         DateTime?
+  paidAt              DateTime?
+  expiresAt           DateTime
+  
+  // Metadata
+  metadata            Json?
+  
+  // Relations
+  user                User?              @relation(fields: [userId], references: [userId])
+  bill                Bills?             @relation(fields: [billId], references: [billId])
+  serviceRequest      ServiceRequest?    @relation(fields: [serviceRequestId], references: [requestId])
+  payment             Payment?
+
+  @@index([razorpayOrderId])
+  @@index([userId])
+  @@index([billId])
+  @@index([serviceRequestId])
+  @@index([status])
+  @@index([createdAt])
+}
+
 model Payment {
-  paymentId    String @id @default(uuid())
-  billId       String
-  userId       String
-  transactionId String @unique
-  paymentMethod String
-  paymentGateway String?
-  amount        Decimal
-  paymentStatus PaymentStatus @default(pending)
+  paymentId       String        @id @default(uuid())
+  paymentOrderId  String        @unique
+  billId          String?
+  userId          String
+  transactionId   String        @unique
+  paymentMethod   String?
+  paymentGateway  String?       @default("razorpay")
+  amount          Decimal
+  paymentStatus   PaymentStatus @default(pending)
   gatewayResponse Json?
-  paymentDate DateTime?
-  receiptNumber String?
-  receiptUrl String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  paymentDate     DateTime?
+  receiptNumber   String?
+  receiptUrl      String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
-  bill Bills @relation(fields: [billId], references: [billId])
-  user User @relation(fields: [userId], references: [userId])
+  paymentOrder PaymentOrder @relation(fields: [paymentOrderId], references: [orderId])
+  bill         Bills?       @relation(fields: [billId], references: [billId])
+  user         User         @relation(fields: [userId], references: [userId])
 
+  @@index([paymentOrderId])
   @@index([billId])
   @@index([userId])
   @@index([paymentStatus])
@@ -233,7 +326,8 @@ model ServiceRequest {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [userId])
+  user          User           @relation(fields: [userId], references: [userId])
+  paymentOrders PaymentOrder[]
 }
 
 model Complaint {

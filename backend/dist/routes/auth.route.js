@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { otpLimiter } from "../index.js";
+import { otpLimiter } from "../middlewares/rateLimiters.js";
 import { sendOtpSchema, signinSchema, signupSchema } from "../validators/auth.validators.js";
 import { sendOTP, signup } from "../controllers/auth/signup.controller.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
