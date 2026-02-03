@@ -11,7 +11,7 @@ export const jwtConfig = {
     secret:
       process.env.JWT_ACCESS_SECRET ||
       "your-access-secret-change-in-production",
-    expiresIn: "15m", // 15 minutes
+    expiresIn: "15m" as const, // 15 minutes
   },
 
   // Refresh Token Settings
@@ -19,7 +19,7 @@ export const jwtConfig = {
     secret:
       process.env.JWT_REFRESH_SECRET ||
       "your-refresh-secret-change-in-production",
-    expiresIn: "7d", // 7 days
+    expiresIn: "7d" as const, // 7 days
     expiresInMs: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds (for DB)
   },
 
@@ -30,4 +30,4 @@ export const jwtConfig = {
     sameSite: "strict" as const, // CSRF protection
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   },
-};
+} as const;
