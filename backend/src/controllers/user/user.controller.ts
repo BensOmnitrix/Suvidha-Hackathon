@@ -6,39 +6,45 @@ import { prisma } from "../../lib/prisma.js";
 
 // Get current user details
 const getCurrentUser = asyncHandler(async (req: Request, res: Response) => {
-    const user = req.user;
+  const user = req.user;
 
-    if (!user) {
-        throw new ApiError(404, "User not found");
-    }
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
 
-    return res
-        .status(200)
-        .json(new ApiResponse(200, user, "User fetched successfully"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "User fetched successfully"));
 });
 
 // Update user details
-const updateAccountDetails = asyncHandler(async (req: Request, res: Response) => {
+const updateAccountDetails = asyncHandler(
+  async (req: Request, res: Response) => {
     const { fullName, email, preferredLanguage } = req.body;
 
     if (!fullName || !email) {
-        throw new ApiError(400, "All fields are required");
+      throw new ApiError(400, "All fields are required");
+    }
+
+    if (!req.user?.userId) {
+      throw new ApiError(401, "Unauthorized");
     }
 
     const user = await prisma.user.update({
-        where: {
-            userId: req.user?.userId,
-        },
-        data: {
-            fullName,
-            email,
-            preferredLanguage
-        },
+      where: {
+        userId: req.user.userId,
+      },
+      data: {
+        fullName,
+        email,
+        preferredLanguage,
+      },
     });
 
     return res
-        .status(200)
-        .json(new ApiResponse(200, user, "Account details updated successfully"));
-});
+      .status(200)
+      .json(new ApiResponse(200, user, "Account details updated successfully"));
+  },
+);
 
 export { getCurrentUser, updateAccountDetails };

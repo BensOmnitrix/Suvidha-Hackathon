@@ -51,7 +51,7 @@ export interface TokenPair {
 export function generateAccessToken(payload: AccessTokenPayload): string {
   return jwt.sign(payload, jwtConfig.accessToken.secret, {
     expiresIn: jwtConfig.accessToken.expiresIn,
-  });
+  } as jwt.SignOptions);
 }
 
 /**

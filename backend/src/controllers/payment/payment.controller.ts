@@ -416,8 +416,10 @@ export const getPaymentById = asyncHandler(
       return res.status(404).json({ error: "Payment not found" });
     }
 
-    // Check ownership (unless admin)
-    if (payment.userId !== userId && !req.user?.isAdmin) {
+    // Check ownership (unless admin or super_admin)
+    const isAdmin =
+      req.user?.role === "admin" || req.user?.role === "super_admin";
+    if (payment.userId !== userId && !isAdmin) {
       return res.status(403).json({ error: "Access denied" });
     }
 
